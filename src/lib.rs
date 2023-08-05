@@ -3,3 +3,6 @@
 #![warn(missing_docs)]
 mod state_machine;
 mod states;
+
+#[cfg(feature = "bevy")]
+mod bevy;

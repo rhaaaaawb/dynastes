@@ -1,11 +1,26 @@
 use std::{collections::HashMap, fmt::Debug};
 
-use log::error;
+use bevy::{prelude::Res, sprite::TextureAtlasSprite, time::Time};
+#[cfg(feature = "bevy")]
+use bevy::{
+    prelude::{Component, Query, Reflect},
+    reflect::{TypePath, TypeUuid},
+    utils::Uuid,
+};
+use log::{error, trace};
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[cfg_attr(feature = "bevy", derive(Component, Reflect))]
 pub struct StateID(String);
 
+impl From<String> for StateID {
+    fn from(value: String) -> Self {
+        StateID(value)
+    }
+}
+
 #[derive(Debug)]
+#[cfg_attr(feature = "bevy", derive(Component))]
 pub struct AnimationStateMachine<S> {
     current_id: StateID,
     states: HashMap<StateID, Box<dyn AnimationState<Sprite = S>>>,
@@ -15,6 +30,15 @@ impl<S> AnimationStateMachine<S>
 where
     S: Sprite,
 {
+    pub fn new(default_id: StateID, default_state: Box<dyn AnimationState<Sprite = S>>) -> Self {
+        let mut states = HashMap::new();
+        states.insert(default_id.clone(), default_state);
+        Self {
+            current_id: default_id,
+            states,
+        }
+    }
+
     pub fn update(&mut self, args: UpdateArgs, sprite: &mut S) {
         let state = self.states.get_mut(&self.current_id).unwrap();
 
@@ -37,7 +61,25 @@ where
     }
 }
 
-pub trait AnimationState: Debug {
+#[cfg(feature = "bevy")]
+impl<S> AnimationStateMachine<S>
+where
+    S: 'static + Component + Sprite,
+{
+    pub fn animation_system(time: Res<Time>, mut query: Query<(&mut Self, &mut S)>) {
+        for (mut asm, mut sprite) in query.iter_mut() {
+            println!("ASM: {:?}, sprite: {:?}", asm, sprite);
+            asm.update(
+                UpdateArgs {
+                    delta_ms: time.delta_seconds_f64() * 1000.,
+                },
+                &mut sprite,
+            )
+        }
+    }
+}
+
+pub trait AnimationState: Debug + Send + Sync {
     type Sprite: Sprite;
 
     /// Called when the state machine starts processing this state (used for reseting any stateful fields)
@@ -63,4 +105,7 @@ pub trait IndexSprite: Debug {
 
 // Filler for now
 #[derive(Debug, Clone)]
-pub struct UpdateArgs {}
+pub struct UpdateArgs {
+    /// The number of ms elapsed since the last update was called
+    pub delta_ms: f64,
+}

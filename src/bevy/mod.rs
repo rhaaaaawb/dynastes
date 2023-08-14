@@ -2,6 +2,10 @@ use bevy::sprite::TextureAtlasSprite;
 
 use crate::state_machine::{IndexSprite, Sprite};
 
+mod plugin;
+
+pub use plugin::SpriteAnimationPlugin;
+
 impl Sprite for TextureAtlasSprite {}
 
 impl IndexSprite for TextureAtlasSprite {

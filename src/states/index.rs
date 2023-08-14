@@ -1,5 +1,7 @@
 use core::marker::PhantomData;
 
+use log::trace;
+
 use crate::state_machine::{AnimationState, IndexSprite, Sprite, StateID};
 
 #[derive(Debug, Clone)]
@@ -15,21 +17,44 @@ pub struct IndexState<Sprite> {
     maintain_index: bool,
     phantom: PhantomData<Sprite>,
     index: usize,
+    /// The total number of milliseconds that have passed since the last frame update
+    ms_elapsed: f64,
 }
 
 impl<S> IndexState<S> {
+    pub fn new(
+        min_i: usize,
+        max_i: usize,
+        mspf: f64,
+        next_state: Option<StateID>,
+        maintain_index: bool,
+    ) -> Self {
+        Self {
+            min_i,
+            max_i,
+            mspf,
+            next_state,
+            maintain_index,
+            phantom: PhantomData::default(),
+            index: min_i,
+            ms_elapsed: 0.,
+        }
+    }
+
     fn increment(&mut self) {
-        self.index = if self.index + 1 > self.max_i {
-            self.index + 1 - self.max_i + self.min_i
+        let num_frames = f64::floor(self.ms_elapsed / self.mspf) as usize;
+        self.ms_elapsed %= self.mspf;
+        self.index = if self.index + num_frames > self.max_i {
+            self.index + num_frames - self.max_i + self.min_i
         } else {
-            self.index + 1
+            self.index + num_frames
         }
     }
 }
 
 impl<S> AnimationState for IndexState<S>
 where
-    S: Sprite + IndexSprite,
+    S: Send + Sync + Sprite + IndexSprite,
 {
     type Sprite = S;
 
@@ -40,9 +65,8 @@ where
     }
 
     fn update(&mut self, args: crate::state_machine::UpdateArgs, sprite: &mut Self::Sprite) {
-        // TODO! some sort of logic for frame time
-        let next_frame = true;
-        if (next_frame) {
+        self.ms_elapsed += args.delta_ms;
+        if self.ms_elapsed >= self.mspf {
             self.increment();
             sprite.set_index(self.index);
         }

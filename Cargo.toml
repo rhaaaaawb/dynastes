@@ -3,12 +3,16 @@ name = "dynastes"
 version = "0.1.0"
 edition = "2021"
 authors = ["Juniper Parsons"]
+exclude = ["assets/*"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 bevy = { version = "0.11.0", optional = true }
 log = "0.4.19"
+
+[dev-dependencies]
+env_logger = "0.10.0"
 
 [features]
 default = ['bevy']
@@ -17,3 +21,7 @@ bevy = ['dep:bevy']
 [lib]
 crate-type = ["rlib"]
 edition = "2021"
+
+[[example]]
+name = "bevy_animation"
+features = ['bevy']

@@ -1,16 +1,15 @@
 use std::{collections::HashMap, fmt::Debug};
 
-use bevy::{prelude::Res, sprite::TextureAtlasSprite, time::Time};
 #[cfg(feature = "bevy")]
 use bevy::{
-    prelude::{Component, Query, Reflect},
-    reflect::{TypePath, TypeUuid},
-    utils::Uuid,
+    prelude::{Component, Query, Reflect, Res},
+    time::Time,
 };
-use log::{error, trace};
+use log::error;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 #[cfg_attr(feature = "bevy", derive(Component, Reflect))]
+/// The ID of a state in the state machine
 pub struct StateID(String);
 
 impl From<String> for StateID {
@@ -21,6 +20,7 @@ impl From<String> for StateID {
 
 #[derive(Debug)]
 #[cfg_attr(feature = "bevy", derive(Component))]
+/// A finite state machine across animation states
 pub struct AnimationStateMachine<S> {
     current_id: StateID,
     states: HashMap<StateID, Box<dyn AnimationState<Sprite = S>>>,
@@ -30,6 +30,7 @@ impl<S> AnimationStateMachine<S>
 where
     S: Sprite,
 {
+    /// Creates a new FSM initialized with `default_id` and `default_state`
     pub fn new(default_id: StateID, default_state: Box<dyn AnimationState<Sprite = S>>) -> Self {
         let mut states = HashMap::new();
         states.insert(default_id.clone(), default_state);
@@ -39,6 +40,14 @@ where
         }
     }
 
+    /// Add all given `StateID` `AnimationState` pairs to the FSM.
+    pub fn add_states(&mut self, pairs: Vec<(StateID, Box<dyn AnimationState<Sprite = S>>)>) {
+        for (id, state) in pairs {
+            self.states.insert(id, state);
+        }
+    }
+
+    /// Run an update cycle for the FSM, potentially changing the frame or state
     pub fn update(&mut self, args: UpdateArgs, sprite: &mut S) {
         let state = self.states.get_mut(&self.current_id).unwrap();
 
@@ -49,6 +58,7 @@ where
         }
     }
 
+    /// Set the active state of the FSM
     pub fn set_state(&mut self, new_id: StateID) -> Option<()> {
         if let Some(next) = self.states.get_mut(&new_id) {
             self.current_id = new_id;
@@ -66,9 +76,9 @@ impl<S> AnimationStateMachine<S>
 where
     S: 'static + Component + Sprite,
 {
+    /// Run the animations across bundles of `AnimationStateMachine<S>` and `S`
     pub fn animation_system(time: Res<Time>, mut query: Query<(&mut Self, &mut S)>) {
         for (mut asm, mut sprite) in query.iter_mut() {
-            println!("ASM: {:?}, sprite: {:?}", asm, sprite);
             asm.update(
                 UpdateArgs {
                     delta_ms: time.delta_seconds_f64() * 1000.,
@@ -79,7 +89,9 @@ where
     }
 }
 
+/// The types of states that can be represented by the AnimationStateMachine
 pub trait AnimationState: Debug + Send + Sync {
+    /// The "sprite" type that is modified by this state, i.e. `TextureAtlasSprite` for Bevy animation state machines
     type Sprite: Sprite;
 
     /// Called when the state machine starts processing this state (used for reseting any stateful fields)
@@ -95,16 +107,20 @@ pub trait AnimationState: Debug + Send + Sync {
     fn next_state(&self) -> Option<StateID>;
 }
 
+/// The types that an `AnimationStateMachine` can animate
 pub trait Sprite: Debug + IndexSprite {}
 
+/// A sprite whose current frame is modified by setting an index
 pub trait IndexSprite: Debug {
+    /// Set the frame by changing the index
     fn set_index(&mut self, index: usize);
 
+    /// Get the current frame index for the sprite
     fn get_index(&self) -> usize;
 }
 
-// Filler for now
 #[derive(Debug, Clone)]
+/// Arguments used when updating the `AnimationStateMachine`
 pub struct UpdateArgs {
     /// The number of ms elapsed since the last update was called
     pub delta_ms: f64,

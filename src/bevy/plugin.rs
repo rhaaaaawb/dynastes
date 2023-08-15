@@ -4,6 +4,9 @@ use bevy::prelude::*;
 
 use crate::state_machine::AnimationStateMachine;
 
+/// The Dynastes sprite animation plugin for Bevy.
+///
+/// Updates animation frames for bundles with an `AnimationStateMachine<S>` and `S` component.
 pub struct SpriteAnimationPlugin<Sprite>(PhantomData<Sprite>);
 
 impl<S> Default for SpriteAnimationPlugin<S> {

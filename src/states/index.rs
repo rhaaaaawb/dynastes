@@ -1,10 +1,9 @@
 use core::marker::PhantomData;
 
-use log::trace;
-
 use crate::state_machine::{AnimationState, IndexSprite, Sprite, StateID};
 
 #[derive(Debug, Clone)]
+/// A state that determines the frame based on an incrementing index
 pub struct IndexState<Sprite> {
     min_i: usize,
     max_i: usize,
@@ -22,6 +21,12 @@ pub struct IndexState<Sprite> {
 }
 
 impl<S> IndexState<S> {
+    /// Make a new index state
+    /// * `min_i` The minimum index in the sprite sheet that this state should use
+    /// * `max_i` The maximum index in the sprite sheet that this state should use
+    /// * `mspf` The number of milliseconds that each frame should be on screen
+    /// * `next_state` If `Some` the state to switch to after reaching `max_i`, otherwise loop on this state
+    /// * `maintain_index` If true the current index will persist after switching off and back to this state 
     pub fn new(
         min_i: usize,
         max_i: usize,

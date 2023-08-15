@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 use dynastes::{
-    bevy::SpriteAnimationPlugin, state_machine::AnimationStateMachine, states::IndexState,
+    bevy::SpriteAnimationPlugin,
+    state_machine::{AnimationStateMachine, StateID},
+    states::IndexState,
 };
 
 fn main() {
@@ -10,8 +12,6 @@ fn main() {
         .add_plugins(DefaultPlugins.set(ImagePlugin {
             default_sampler: bevy::render::texture::ImageSampler::nearest_descriptor(),
         }))
-        // add the plugin to our game, the 10 is the max number of nodes in a single chain
-        // this provents the app getting stuck in a loop
         .add_plugins(SpriteAnimationPlugin::<TextureAtlasSprite>::default())
         .add_systems(Startup, setup_animations)
         .run()
@@ -24,15 +24,21 @@ fn setup_animations(
 ) {
     commands.spawn(Camera2dBundle::default());
 
-    let sprite_sheet: Handle<Image> = asset_server.load("RH-run-front.png");
+    let sprite_sheet: Handle<Image> = asset_server.load("sprite-sheet.png");
     let texture_atlas =
-        TextureAtlas::from_grid(sprite_sheet, [128., 128.].into(), 10, 1, None, None);
+        TextureAtlas::from_grid(sprite_sheet, [128., 128.].into(), 26, 2, None, None);
     let texture_atlas_handle = sprites.add(texture_atlas);
 
-    let walk_state: IndexState<TextureAtlasSprite> =
-        IndexState::new(0, 9, 1000. / 15., None, false);
+    let walk_id: StateID = "walk".to_string().into();
+    let idle_id: StateID = "idle".to_string().into();
 
-    let asm = AnimationStateMachine::new("walk".to_string().into(), Box::new(walk_state));
+    let walk_state: IndexState<TextureAtlasSprite> =
+        IndexState::new(0, 9, 1000. / 15., Some(idle_id.clone()), false);
+    let idle_state: IndexState<TextureAtlasSprite> =
+        IndexState::new(26, 51, 1000. / 15., Some(walk_id.clone()), false);
+
+    let mut asm = AnimationStateMachine::new(idle_id, Box::new(idle_state));
+    asm.add_states(vec![(walk_id, Box::new(walk_state))]);
 
     commands.spawn((
         SpriteSheetBundle {

@@ -1,7 +1,5 @@
 use core::marker::PhantomData;
 
-use log::trace;
-
 use crate::state_machine::{AnimationState, IndexSprite, Sprite, StateID};
 
 #[derive(Debug, Clone)]

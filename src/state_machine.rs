@@ -39,6 +39,12 @@ where
         }
     }
 
+    pub fn add_states(&mut self, pairs: Vec<(StateID, Box<dyn AnimationState<Sprite = S>>)>) {
+        for (id, state) in pairs {
+            self.states.insert(id, state);
+        }
+    }
+
     pub fn update(&mut self, args: UpdateArgs, sprite: &mut S) {
         let state = self.states.get_mut(&self.current_id).unwrap();
 
@@ -68,7 +74,6 @@ where
 {
     pub fn animation_system(time: Res<Time>, mut query: Query<(&mut Self, &mut S)>) {
         for (mut asm, mut sprite) in query.iter_mut() {
-            println!("ASM: {:?}, sprite: {:?}", asm, sprite);
             asm.update(
                 UpdateArgs {
                     delta_ms: time.delta_seconds_f64() * 1000.,

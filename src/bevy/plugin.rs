@@ -1,25 +1,14 @@
-use core::marker::PhantomData;
+use bevy::prelude::{App, Plugin, Update};
 
-use bevy::prelude::*;
-
-use crate::state_machine::AnimationStateMachine;
+use crate::state_machine::BevyASM;
 
 /// The Dynastes sprite animation plugin for Bevy.
 ///
-/// Updates animation frames for bundles with an `AnimationStateMachine<S>` and `S` component.
-pub struct SpriteAnimationPlugin<Sprite>(PhantomData<Sprite>);
+/// Updates animation frames for bundles with an `AnimationStateMachine<TexutreAtlasSprite, Handle<TextureAtlas>>`.
+pub struct SpriteAnimationPlugin;
 
-impl<S> Default for SpriteAnimationPlugin<S> {
-    fn default() -> Self {
-        Self(PhantomData::default())
-    }
-}
-
-impl<S> Plugin for SpriteAnimationPlugin<S>
-where
-    S: Send + Sync + crate::state_machine::Sprite + Component,
-{
+impl Plugin for SpriteAnimationPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, AnimationStateMachine::<S>::animation_system);
+        app.add_systems(Update, BevyASM::animation_system);
     }
 }

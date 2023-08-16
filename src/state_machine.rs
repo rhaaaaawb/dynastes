@@ -1,13 +1,18 @@
 use std::{collections::HashMap, fmt::Debug};
 
+use bevy::reflect::TypePath;
 #[cfg(feature = "bevy")]
 use bevy::{
-    prelude::{Component, Query, Reflect, Res},
+    prelude::{Component, Handle, Query, Reflect, Res},
+    reflect::TypeUuid,
+    sprite::{TextureAtlas, TextureAtlasSprite},
     time::Time,
+    utils::Uuid,
 };
 use log::error;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "bevy", derive(Component, Reflect))]
 /// The ID of a state in the state machine
 pub struct StateID(String);
@@ -21,20 +26,29 @@ impl From<String> for StateID {
 #[derive(Debug)]
 #[cfg_attr(feature = "bevy", derive(Component))]
 /// A finite state machine across animation states
-pub struct AnimationStateMachine<S> {
+pub struct AnimationStateMachine<S, F> {
+    frame_source: F,
     current_id: StateID,
     states: HashMap<StateID, Box<dyn AnimationState<Sprite = S>>>,
 }
 
-impl<S> AnimationStateMachine<S>
+#[cfg(feature = "bevy")]
+pub type BevyASM = AnimationStateMachine<TextureAtlasSprite, Handle<TextureAtlas>>;
+
+impl<S, F> AnimationStateMachine<S, F>
 where
-    S: Sprite,
+    S: Sprite<FrameSource = F>,
 {
     /// Creates a new FSM initialized with `default_id` and `default_state`
-    pub fn new(default_id: StateID, default_state: Box<dyn AnimationState<Sprite = S>>) -> Self {
+    pub fn new(
+        frame_source: F,
+        default_id: StateID,
+        default_state: Box<dyn AnimationState<Sprite = S>>,
+    ) -> Self {
         let mut states = HashMap::new();
         states.insert(default_id.clone(), default_state);
         Self {
+            frame_source,
             current_id: default_id,
             states,
         }
@@ -72,9 +86,10 @@ where
 }
 
 #[cfg(feature = "bevy")]
-impl<S> AnimationStateMachine<S>
+impl<S, F> AnimationStateMachine<S, F>
 where
-    S: 'static + Component + Sprite,
+    S: 'static + Component + Sprite<FrameSource = F>,
+    F: 'static + Send + Sync,
 {
     /// Run the animations across bundles of `AnimationStateMachine<S>` and `S`
     pub fn animation_system(time: Res<Time>, mut query: Query<(&mut Self, &mut S)>) {
@@ -86,6 +101,25 @@ where
                 &mut sprite,
             )
         }
+    }
+}
+
+#[cfg(feature = "bevy")]
+impl TypeUuid for BevyASM {
+    const TYPE_UUID: Uuid = Uuid::from_bytes([
+        0x74, 0x37, 0x7e, 0x21, 0x15, 0x3d, 0x4e, 0x30, 0x9b, 0x5e, 0x1b, 0x85, 0x7a, 0x9a, 0xb8,
+        0x07,
+    ]);
+}
+
+#[cfg(feature = "bevy")]
+impl TypePath for BevyASM {
+    fn type_path() -> &'static str {
+        todo!()
+    }
+
+    fn short_type_path() -> &'static str {
+        todo!()
     }
 }
 
@@ -108,7 +142,9 @@ pub trait AnimationState: Debug + Send + Sync {
 }
 
 /// The types that an `AnimationStateMachine` can animate
-pub trait Sprite: Debug + IndexSprite {}
+pub trait Sprite: Debug + IndexSprite {
+    type FrameSource: Debug + Send + Sync;
+}
 
 /// A sprite whose current frame is modified by setting an index
 pub trait IndexSprite: Debug {
@@ -119,7 +155,7 @@ pub trait IndexSprite: Debug {
     fn get_index(&self) -> usize;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 /// Arguments used when updating the `AnimationStateMachine`
 pub struct UpdateArgs {
     /// The number of ms elapsed since the last update was called

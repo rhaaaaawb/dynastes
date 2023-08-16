@@ -1,0 +1,49 @@
+name: Rust
+
+on:
+  pull_request:
+    branches: [ "*" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Format
+      run: cargo fmt
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update 
+        sudo apt-get install -y -qq libasound2-dev libudev-dev
+    - name: Build
+      run: cargo build --verbose
+  
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update 
+        sudo apt-get install -y -qq libasound2-dev libudev-dev
+    - name: Clippy
+      run: cargo clippy
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update 
+        sudo apt-get install -y -qq libasound2-dev libudev-dev
+    - name: Run tests
+      run: cargo test --verbose

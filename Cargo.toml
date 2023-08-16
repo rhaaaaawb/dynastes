@@ -21,7 +21,3 @@ bevy = ['dep:bevy']
 [lib]
 crate-type = ["rlib"]
 edition = "2021"
-
-[[example]]
-name = "bevy_animation"
-features = ['bevy']

@@ -1,10 +1,21 @@
 use core::marker::PhantomData;
 
+#[cfg(feature = "bevy")]
+use bevy::{
+    asset::AssetPath,
+    prelude::{Component, Handle, Query, Reflect, Res},
+    reflect::{TypePath, TypeUuid},
+    sprite::{TextureAtlas, TextureAtlasSprite},
+    time::Time,
+    utils::Uuid,
+};
 use serde::{Deserialize, Serialize};
 
 use crate::state_machine::{AnimationState, IndexSprite, Sprite, StateID};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "bevy", derive(TypePath))]
+
 /// A state that determines the frame based on an incrementing index
 pub struct IndexState<Sprite> {
     min_i: usize,
@@ -16,6 +27,7 @@ pub struct IndexState<Sprite> {
     next_state: Option<StateID>,
     /// True when the current index should be maintained after restarting the state
     maintain_index: bool,
+    #[serde(skip)]
     phantom: PhantomData<Sprite>,
     index: usize,
     /// The total number of milliseconds that have passed since the last frame update

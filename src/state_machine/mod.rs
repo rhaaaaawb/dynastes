@@ -1,8 +1,9 @@
 use core::marker::PhantomData;
-use std::{collections::HashMap, fmt::Debug};
+use std::{collections::HashMap, fmt::Debug, path::PathBuf};
 
 #[cfg(feature = "bevy")]
 use bevy::{
+    asset::AssetPath,
     prelude::{Component, Handle, Query, Reflect, Res},
     reflect::{TypePath, TypeUuid},
     sprite::{TextureAtlas, TextureAtlasSprite},
@@ -16,12 +17,15 @@ use crate::states::IndexState;
 
 mod state_container;
 mod state_id;
+mod traits;
 
 pub use state_container::StateContainer;
 pub use state_id::StateID;
+pub use traits::*;
 
 #[derive(Debug, Serialize, Deserialize)]
-#[cfg_attr(feature = "bevy", derive(Component))]
+#[cfg_attr(feature = "bevy", derive(Component, TypePath))]
+// #[uuid = "74377e21-153d-4e30-9b5e-1b857a9ab807"]
 /// A finite state machine across animation states
 pub struct AnimationStateMachine<Sprite, State, FrameSource> {
     frame_source: FrameSource,
@@ -32,8 +36,11 @@ pub struct AnimationStateMachine<Sprite, State, FrameSource> {
 }
 
 #[cfg(feature = "bevy")]
-pub type BevyASM =
-    AnimationStateMachine<TextureAtlasSprite, IndexState<TextureAtlasSprite>, Handle<TextureAtlas>>;
+pub type BevyASM = AnimationStateMachine<
+    TextureAtlasSprite,
+    IndexState<TextureAtlasSprite>,
+    crate::bevy::BevyFrameSource,
+>;
 
 impl<S, T, F> AnimationStateMachine<S, T, F>
 where
@@ -81,6 +88,10 @@ where
             None
         }
     }
+
+    pub fn frame_source(&self) -> &F {
+        &self.frame_source
+    }
 }
 
 #[cfg(feature = "bevy")]
@@ -109,49 +120,6 @@ impl TypeUuid for BevyASM {
         0x74, 0x37, 0x7e, 0x21, 0x15, 0x3d, 0x4e, 0x30, 0x9b, 0x5e, 0x1b, 0x85, 0x7a, 0x9a, 0xb8,
         0x07,
     ]);
-}
-
-#[cfg(feature = "bevy")]
-impl TypePath for BevyASM {
-    fn type_path() -> &'static str {
-        todo!()
-    }
-
-    fn short_type_path() -> &'static str {
-        todo!()
-    }
-}
-
-/// The types of states that can be represented by the AnimationStateMachine
-pub trait AnimationState: Debug + Send + Sync {
-    /// The "sprite" type that is modified by this state, i.e. `TextureAtlasSprite` for Bevy animation state machines
-    type Sprite: Sprite;
-
-    /// Called when the state machine starts processing this state (used for reseting any stateful fields)
-    fn start(&mut self);
-
-    /// Update the given sprite according to the behavior of this state.
-    fn update(&mut self, args: UpdateArgs, sprite: &mut Self::Sprite);
-
-    /// Queries for the ID of the next state in the state machine.
-    /// # Returns
-    /// * `None` if the state machine should continue processing this state
-    /// * `Some(id)` if the state machine should stop processing this state and move to `id`
-    fn next_state(&self) -> Option<StateID>;
-}
-
-/// The types that an `AnimationStateMachine` can animate
-pub trait Sprite: Debug + IndexSprite {
-    type FrameSource: Debug + Send + Sync;
-}
-
-/// A sprite whose current frame is modified by setting an index
-pub trait IndexSprite: Debug {
-    /// Set the frame by changing the index
-    fn set_index(&mut self, index: usize);
-
-    /// Get the current frame index for the sprite
-    fn get_index(&self) -> usize;
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

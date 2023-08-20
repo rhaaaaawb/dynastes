@@ -1,7 +1,9 @@
+use std::fs;
+
 use bevy::prelude::*;
 use dynastes::{
-    bevy::SpriteAnimationPlugin,
-    state_machine::{AnimationStateMachine, StateID},
+    bevy::{BevyFrameSource, SpriteAnimationPlugin, TextureAtlasGridMetadata},
+    state_machine::{AnimationStateMachine, BevyASM, StateID},
     states::IndexState,
 };
 
@@ -24,10 +26,18 @@ fn setup_animations(
 ) {
     commands.spawn(Camera2dBundle::default());
 
-    let sprite_sheet: Handle<Image> = asset_server.load("sprite-sheet.png");
-    let texture_atlas =
-        TextureAtlas::from_grid(sprite_sheet, [128., 128.].into(), 26, 2, None, None);
-    let texture_atlas_handle = sprites.add(texture_atlas);
+    let frame_soure = BevyFrameSource {
+        path: "sprite-sheet.png".into(),
+        metadata: TextureAtlasGridMetadata {
+            tile_size: [128., 128.].into(),
+            columns: 26,
+            rows: 2,
+            padding: None,
+            offset: None,
+        },
+    };
+
+    let texture_atlas_handle = sprites.add(frame_soure.make_texture_atlas(asset_server));
 
     let walk_id: StateID = "walk".to_string().into();
     let idle_id: StateID = "idle".to_string().into();
@@ -37,8 +47,11 @@ fn setup_animations(
     let idle_state: IndexState<TextureAtlasSprite> =
         IndexState::new(26, 51, 1000. / 15., Some(walk_id.clone()), false);
 
-    let mut asm = AnimationStateMachine::new(texture_atlas_handle.clone(), idle_id, idle_state);
+    let mut asm = BevyASM::new(frame_soure, idle_id, idle_state);
     asm.add_states(vec![(walk_id, walk_state)]);
+
+    let asm_str = ron::to_string(&asm).unwrap();
+    let _ = fs::write("assets/state-machine.ron", asm_str);
 
     commands.spawn((
         SpriteSheetBundle {

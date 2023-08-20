@@ -1,10 +1,10 @@
+use core::marker::PhantomData;
 use std::{collections::HashMap, fmt::Debug};
 
-use bevy::reflect::TypePath;
 #[cfg(feature = "bevy")]
 use bevy::{
     prelude::{Component, Handle, Query, Reflect, Res},
-    reflect::TypeUuid,
+    reflect::{TypePath, TypeUuid},
     sprite::{TextureAtlas, TextureAtlasSprite},
     time::Time,
     utils::Uuid,
@@ -12,58 +12,56 @@ use bevy::{
 use log::error;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(feature = "bevy", derive(Component, Reflect))]
-/// The ID of a state in the state machine
-pub struct StateID(String);
+use crate::states::IndexState;
 
-impl From<String> for StateID {
-    fn from(value: String) -> Self {
-        StateID(value)
-    }
-}
+mod state_container;
+mod state_id;
 
-#[derive(Debug)]
+pub use state_container::StateContainer;
+pub use state_id::StateID;
+
+#[derive(Debug, Serialize, Deserialize)]
 #[cfg_attr(feature = "bevy", derive(Component))]
 /// A finite state machine across animation states
-pub struct AnimationStateMachine<S, F> {
-    frame_source: F,
+pub struct AnimationStateMachine<Sprite, State, FrameSource> {
+    frame_source: FrameSource,
     current_id: StateID,
-    states: HashMap<StateID, Box<dyn AnimationState<Sprite = S>>>,
+    states: StateContainer<State>,
+    #[serde(skip)]
+    phantom: PhantomData<Sprite>,
 }
 
 #[cfg(feature = "bevy")]
-pub type BevyASM = AnimationStateMachine<TextureAtlasSprite, Handle<TextureAtlas>>;
+pub type BevyASM =
+    AnimationStateMachine<TextureAtlasSprite, IndexState<TextureAtlasSprite>, Handle<TextureAtlas>>;
 
-impl<S, F> AnimationStateMachine<S, F>
+impl<S, T, F> AnimationStateMachine<S, T, F>
 where
     S: Sprite<FrameSource = F>,
+    T: AnimationState<Sprite = S>,
 {
     /// Creates a new FSM initialized with `default_id` and `default_state`
-    pub fn new(
-        frame_source: F,
-        default_id: StateID,
-        default_state: Box<dyn AnimationState<Sprite = S>>,
-    ) -> Self {
+    pub fn new(frame_source: F, default_id: StateID, default_state: T) -> Self {
         let mut states = HashMap::new();
         states.insert(default_id.clone(), default_state);
         Self {
             frame_source,
             current_id: default_id,
-            states,
+            states: states.into(),
+            phantom: PhantomData::default(),
         }
     }
 
     /// Add all given `StateID` `AnimationState` pairs to the FSM.
-    pub fn add_states(&mut self, pairs: Vec<(StateID, Box<dyn AnimationState<Sprite = S>>)>) {
+    pub fn add_states(&mut self, pairs: Vec<(StateID, T)>) {
         for (id, state) in pairs {
-            self.states.insert(id, state);
+            self.states.0.insert(id, state);
         }
     }
 
     /// Run an update cycle for the FSM, potentially changing the frame or state
     pub fn update(&mut self, args: UpdateArgs, sprite: &mut S) {
-        let state = self.states.get_mut(&self.current_id).unwrap();
+        let state = self.states.0.get_mut(&self.current_id).unwrap();
 
         state.update(args, sprite);
 
@@ -74,7 +72,7 @@ where
 
     /// Set the active state of the FSM
     pub fn set_state(&mut self, new_id: StateID) -> Option<()> {
-        if let Some(next) = self.states.get_mut(&new_id) {
+        if let Some(next) = self.states.0.get_mut(&new_id) {
             self.current_id = new_id;
             next.start();
             Some(())
@@ -86,9 +84,10 @@ where
 }
 
 #[cfg(feature = "bevy")]
-impl<S, F> AnimationStateMachine<S, F>
+impl<S, T, F> AnimationStateMachine<S, T, F>
 where
     S: 'static + Component + Sprite<FrameSource = F>,
+    T: 'static + Send + Sync + AnimationState<Sprite = S>,
     F: 'static + Send + Sync,
 {
     /// Run the animations across bundles of `AnimationStateMachine<S>` and `S`

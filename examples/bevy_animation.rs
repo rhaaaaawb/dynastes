@@ -37,9 +37,8 @@ fn setup_animations(
     let idle_state: IndexState<TextureAtlasSprite> =
         IndexState::new(26, 51, 1000. / 15., Some(walk_id.clone()), false);
 
-    let mut asm =
-        AnimationStateMachine::new(texture_atlas_handle.clone(), idle_id, Box::new(idle_state));
-    asm.add_states(vec![(walk_id, Box::new(walk_state))]);
+    let mut asm = AnimationStateMachine::new(texture_atlas_handle.clone(), idle_id, idle_state);
+    asm.add_states(vec![(walk_id, walk_state)]);
 
     commands.spawn((
         SpriteSheetBundle {

@@ -2,8 +2,8 @@ use std::fs;
 
 use bevy::prelude::*;
 use dynastes::{
-    bevy::{BevyFrameSource, SpriteAnimationPlugin, TextureAtlasGridMetadata},
-    state_machine::{AnimationStateMachine, BevyASM, StateID},
+    bevy::{BevyASM, BevyFrameSource, SpriteAnimationPlugin, TextureAtlasGridMetadata},
+    state_machine::StateID,
     states::IndexState,
 };
 

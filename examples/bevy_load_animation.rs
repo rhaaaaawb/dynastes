@@ -1,11 +1,7 @@
-use std::{fs, path::Path};
+use std::fs;
 
 use bevy::prelude::*;
-use dynastes::{
-    bevy::{BevyFrameSource, SpriteAnimationPlugin, TextureAtlasGridMetadata},
-    state_machine::{AnimationStateMachine, BevyASM, StateID},
-    states::IndexState,
-};
+use dynastes::bevy::{BevyASM, SpriteAnimationPlugin};
 
 fn main() {
     env_logger::init();

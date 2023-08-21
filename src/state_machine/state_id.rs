@@ -1,11 +1,5 @@
 #[cfg(feature = "bevy")]
-use bevy::{
-    prelude::{Component, Handle, Query, Reflect, Res},
-    reflect::TypeUuid,
-    sprite::{TextureAtlas, TextureAtlasSprite},
-    time::Time,
-    utils::Uuid,
-};
+use bevy::prelude::{Component, Reflect};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]

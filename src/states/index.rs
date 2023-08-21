@@ -1,14 +1,7 @@
 use core::marker::PhantomData;
 
 #[cfg(feature = "bevy")]
-use bevy::{
-    asset::AssetPath,
-    prelude::{Component, Handle, Query, Reflect, Res},
-    reflect::{TypePath, TypeUuid},
-    sprite::{TextureAtlas, TextureAtlasSprite},
-    time::Time,
-    utils::Uuid,
-};
+use bevy::reflect::TypePath;
 use serde::{Deserialize, Serialize};
 
 use crate::state_machine::{AnimationState, IndexSprite, Sprite, StateID};

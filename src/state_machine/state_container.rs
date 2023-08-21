@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use super::state_id::StateID;
 
 #[derive(Debug)]
+/// A convenience wrapper to hold an ASM's states with their IDs
 pub struct StateContainer<S>(pub HashMap<StateID, S>);
 
 impl<S> From<HashMap<StateID, S>> for StateContainer<S> {

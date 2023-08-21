@@ -1,19 +1,10 @@
 use core::marker::PhantomData;
-use std::{collections::HashMap, fmt::Debug, path::PathBuf};
+use std::{collections::HashMap, fmt::Debug};
 
 #[cfg(feature = "bevy")]
-use bevy::{
-    asset::AssetPath,
-    prelude::{Component, Handle, Query, Reflect, Res},
-    reflect::{TypePath, TypeUuid},
-    sprite::{TextureAtlas, TextureAtlasSprite},
-    time::Time,
-    utils::Uuid,
-};
+use bevy::{prelude::Component, reflect::TypePath};
 use log::error;
 use serde::{Deserialize, Serialize};
-
-use crate::states::IndexState;
 
 mod state_container;
 mod state_id;
@@ -35,16 +26,9 @@ pub struct AnimationStateMachine<Sprite, State, FrameSource> {
     phantom: PhantomData<Sprite>,
 }
 
-#[cfg(feature = "bevy")]
-pub type BevyASM = AnimationStateMachine<
-    TextureAtlasSprite,
-    IndexState<TextureAtlasSprite>,
-    crate::bevy::BevyFrameSource,
->;
-
 impl<S, T, F> AnimationStateMachine<S, T, F>
 where
-    S: Sprite<FrameSource = F>,
+    S: Sprite,
     T: AnimationState<Sprite = S>,
 {
     /// Creates a new FSM initialized with `default_id` and `default_state`
@@ -89,37 +73,10 @@ where
         }
     }
 
+    /// The ASMs frame source
     pub fn frame_source(&self) -> &F {
         &self.frame_source
     }
-}
-
-#[cfg(feature = "bevy")]
-impl<S, T, F> AnimationStateMachine<S, T, F>
-where
-    S: 'static + Component + Sprite<FrameSource = F>,
-    T: 'static + Send + Sync + AnimationState<Sprite = S>,
-    F: 'static + Send + Sync,
-{
-    /// Run the animations across bundles of `AnimationStateMachine<S>` and `S`
-    pub fn animation_system(time: Res<Time>, mut query: Query<(&mut Self, &mut S)>) {
-        for (mut asm, mut sprite) in query.iter_mut() {
-            asm.update(
-                UpdateArgs {
-                    delta_ms: time.delta_seconds_f64() * 1000.,
-                },
-                &mut sprite,
-            )
-        }
-    }
-}
-
-#[cfg(feature = "bevy")]
-impl TypeUuid for BevyASM {
-    const TYPE_UUID: Uuid = Uuid::from_bytes([
-        0x74, 0x37, 0x7e, 0x21, 0x15, 0x3d, 0x4e, 0x30, 0x9b, 0x5e, 0x1b, 0x85, 0x7a, 0x9a, 0xb8,
-        0x07,
-    ]);
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

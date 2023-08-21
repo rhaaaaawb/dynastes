@@ -21,9 +21,7 @@ pub trait AnimationState: Debug + Send + Sync {
 }
 
 /// The types that an `AnimationStateMachine` can animate
-pub trait Sprite: Debug + IndexSprite {
-    type FrameSource: Debug + Send + Sync;
-}
+pub trait Sprite: Debug + IndexSprite {}
 
 /// A sprite whose current frame is modified by setting an index
 pub trait IndexSprite: Debug {

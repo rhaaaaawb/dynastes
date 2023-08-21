@@ -1,10 +1,12 @@
 use bevy::{
-    prelude::{AddAsset, App, Plugin, Query, Res, Update},
+    prelude::{AddAsset, App, Assets, Handle, Plugin, Query, Res, Update},
     sprite::TextureAtlasSprite,
     time::Time,
 };
 
 use crate::{bevy::BevyASM, state_machine::UpdateArgs};
+
+use super::BevyStateInstance;
 
 /// The Dynastes sprite animation plugin for Bevy.
 ///
@@ -21,10 +23,16 @@ impl Plugin for SpriteAnimationPlugin {
 /// Run the animations across bundles of `AnimationStateMachine<S>` and `S`
 pub fn animation_system(
     time: Res<Time>,
-    mut query: Query<(&mut BevyASM, &mut TextureAtlasSprite)>,
+    asms: Res<Assets<BevyASM>>,
+    mut query: Query<(
+        &Handle<BevyASM>,
+        &mut TextureAtlasSprite,
+        &mut BevyStateInstance,
+    )>,
 ) {
-    for (mut asm, mut sprite) in query.iter_mut() {
-        asm.0.update(
+    for (asm_handle, mut sprite, mut instance) in query.iter_mut() {
+        asms.get(&asm_handle).unwrap().0.update(
+            &mut instance,
             UpdateArgs {
                 delta_ms: time.delta_seconds_f64() * 1000.,
             },

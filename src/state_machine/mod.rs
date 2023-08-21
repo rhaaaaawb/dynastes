@@ -1,22 +1,23 @@
 use core::marker::PhantomData;
 use std::{collections::HashMap, fmt::Debug};
 
-use log::error;
 use serde::{Deserialize, Serialize};
 
 mod state_container;
 mod state_id;
+mod state_instance;
 mod traits;
 
 pub use state_container::StateContainer;
 pub use state_id::StateID;
+pub use state_instance::StateInstance;
 pub use traits::*;
 
 #[derive(Debug, Serialize, Deserialize)]
 /// A finite state machine across animation states
 pub struct AnimationStateMachine<Sprite, State, FrameSource> {
     frame_source: FrameSource,
-    current_id: StateID,
+    default_id: StateID,
     states: StateContainer<State>,
     #[serde(skip)]
     phantom: PhantomData<Sprite>,
@@ -33,7 +34,7 @@ where
         states.insert(default_id.clone(), default_state);
         Self {
             frame_source,
-            current_id: default_id,
+            default_id,
             states: states.into(),
             phantom: PhantomData::default(),
         }
@@ -47,31 +48,38 @@ where
     }
 
     /// Run an update cycle for the FSM, potentially changing the frame or state
-    pub fn update(&mut self, args: UpdateArgs, sprite: &mut S) {
-        let state = self.states.0.get_mut(&self.current_id).unwrap();
+    pub fn update(
+        &self,
+        instance: &mut StateInstance<T, T::Data>,
+        args: UpdateArgs,
+        sprite: &mut S,
+    ) {
+        let state = self.states.0.get(&instance.current_id).unwrap();
 
-        state.update(args, sprite);
+        state.update(&mut instance.data, args, sprite);
 
-        if let Some(next_id) = state.next_state() {
-            self.set_state(next_id.to_owned());
-        }
-    }
-
-    /// Set the active state of the FSM
-    pub fn set_state(&mut self, new_id: StateID) -> Option<()> {
-        if let Some(next) = self.states.0.get_mut(&new_id) {
-            self.current_id = new_id;
-            next.start();
-            Some(())
-        } else {
-            error!("Required state '{new_id:?}' does not exist, continuing on current state");
-            None
+        if let Some(next_id) = state.next_state(&instance.data) {
+            *instance = self.new_instance(next_id).unwrap();
         }
     }
 
     /// The ASMs frame source
     pub fn frame_source(&self) -> &F {
         &self.frame_source
+    }
+
+    /// Creates a new instance from the default state
+    pub fn default_instance(&self) -> StateInstance<T, T::Data> {
+        let state = self.states.0.get(&self.default_id).unwrap();
+        StateInstance::new(self.default_id.clone(), state.start())
+    }
+
+    /// Creates a new instance from the given state id if it exists
+    pub fn new_instance(&self, instance_id: StateID) -> Option<StateInstance<T, T::Data>> {
+        self.states
+            .0
+            .get(&instance_id)
+            .map(|state| StateInstance::new(instance_id, state.start()))
     }
 }
 

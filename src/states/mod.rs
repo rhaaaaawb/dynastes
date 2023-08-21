@@ -1,3 +1,2 @@
-mod index;
-
-pub use index::IndexState;
+/// Animation states that set the current frame using some index
+pub mod index;

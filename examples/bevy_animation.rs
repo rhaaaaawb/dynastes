@@ -4,7 +4,7 @@ use bevy::prelude::*;
 use dynastes::{
     bevy::{BevyASM, BevyFrameSource, SpriteAnimationPlugin, TextureAtlasGridMetadata},
     state_machine::StateID,
-    states::IndexState,
+    states::index::IndexState,
 };
 
 fn main() {
@@ -23,6 +23,7 @@ fn setup_animations(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut sprites: ResMut<Assets<TextureAtlas>>,
+    mut state_machines: ResMut<Assets<BevyASM>>,
 ) {
     commands.spawn(Camera2dBundle::default());
 
@@ -43,9 +44,9 @@ fn setup_animations(
     let idle_id: StateID = "idle".to_string().into();
 
     let walk_state: IndexState<TextureAtlasSprite> =
-        IndexState::new(0, 9, 1000. / 15., Some(idle_id.clone()), false);
+        IndexState::new(0, 9, 1000. / 15., Some(idle_id.clone()));
     let idle_state: IndexState<TextureAtlasSprite> =
-        IndexState::new(26, 51, 1000. / 15., Some(walk_id.clone()), false);
+        IndexState::new(26, 51, 1000. / 15., Some(walk_id.clone()));
 
     let mut asm = BevyASM::new(frame_soure, idle_id, idle_state);
     asm.0.add_states(vec![(walk_id, walk_state)]);
@@ -55,12 +56,19 @@ fn setup_animations(
     let asm_str = ron::to_string(&asm).unwrap();
     let _ = fs::write("assets/state-machine.ron", asm_str);
 
+    let instance = asm.0.default_instance();
+    let instance_str = ron::to_string(&instance).unwrap();
+    let _ = fs::write("assets/default_instance.ron", instance_str);
+
+    let asm_handle = state_machines.add(asm);
+
     commands.spawn((
         SpriteSheetBundle {
             sprite: TextureAtlasSprite::new(0),
             texture_atlas: texture_atlas_handle,
             ..Default::default()
         },
-        asm,
+        asm_handle,
+        instance,
     ));
 }

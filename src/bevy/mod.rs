@@ -8,8 +8,8 @@ use bevy::{
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    state_machine::{AnimationStateMachine, IndexSprite, Sprite, StateID},
-    states::IndexState,
+    state_machine::{AnimationStateMachine, IndexSprite, Sprite, StateID, StateInstance},
+    states::index::{IndexData, IndexState},
 };
 
 mod plugin;
@@ -37,6 +37,10 @@ impl BevyASM {
         ))
     }
 }
+
+/// A convenience wrapper monomorphizing the `StateInstance` for the BevyASM
+pub type BevyStateInstance =
+    StateInstance<IndexState<TextureAtlasSprite>, IndexData<TextureAtlasSprite>>;
 
 impl Sprite for TextureAtlasSprite {}
 

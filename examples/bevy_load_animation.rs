@@ -1,7 +1,7 @@
 use std::fs;
 
 use bevy::prelude::*;
-use dynastes::bevy::{BevyASM, SpriteAnimationPlugin};
+use dynastes::bevy::{BevyASM, BevyStateInstance, SpriteAnimationPlugin};
 
 fn main() {
     env_logger::init();
@@ -23,12 +23,15 @@ fn setup_animations(
 ) {
     commands.spawn(Camera2dBundle::default());
 
+    // TODO: the next step is to somehow do this with AssetServer::load (?)
     let asm_str = fs::read_to_string("assets/state-machine.ron").unwrap();
     let asm: BevyASM = ron::from_str(&asm_str).unwrap();
 
     let texture_atlas_handle = sprites.add(asm.0.frame_source().make_texture_atlas(asset_server));
+    let asm_handle = state_machines.add(asm);
 
-    state_machines.add(asm);
+    let instance_str = fs::read_to_string("assets/default_instance.ron").unwrap();
+    let instance: BevyStateInstance = ron::from_str(&instance_str).unwrap();
 
     commands.spawn((
         SpriteSheetBundle {
@@ -36,7 +39,7 @@ fn setup_animations(
             texture_atlas: texture_atlas_handle,
             ..Default::default()
         },
-        // asm,
-        // TODO per bundle state information so ASMs can be reused?
+        asm_handle,
+        instance,
     ));
 }

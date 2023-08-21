@@ -1,13 +1,14 @@
 use std::path::{Path, PathBuf};
 
 use bevy::{
-    prelude::{AssetServer, Res, Vec2},
+    prelude::{AssetServer, Component, Res, Vec2},
+    reflect::{TypePath, TypeUuid},
     sprite::{TextureAtlas, TextureAtlasSprite},
 };
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    state_machine::{AnimationStateMachine, IndexSprite, Sprite},
+    state_machine::{AnimationStateMachine, IndexSprite, Sprite, StateID},
     states::IndexState,
 };
 
@@ -15,10 +16,27 @@ mod plugin;
 
 pub use plugin::SpriteAnimationPlugin;
 
-#[cfg(feature = "bevy")]
 /// A convenience wrapper for the bevy monomorphization of the ASM
-pub type BevyASM =
-    AnimationStateMachine<TextureAtlasSprite, IndexState<TextureAtlasSprite>, BevyFrameSource>;
+#[derive(Debug, Serialize, Deserialize, Component, TypeUuid, TypePath)]
+#[uuid = "74377e21-153d-4e30-9b5e-1b857a9ab807"]
+pub struct BevyASM(
+    pub AnimationStateMachine<TextureAtlasSprite, IndexState<TextureAtlasSprite>, BevyFrameSource>,
+);
+
+impl BevyASM {
+    /// Creates a new Bevy ASM initialized with `default_id` and `default_state`
+    pub fn new(
+        frame_source: BevyFrameSource,
+        default_id: StateID,
+        default_state: IndexState<TextureAtlasSprite>,
+    ) -> Self {
+        BevyASM(AnimationStateMachine::new(
+            frame_source,
+            default_id,
+            default_state,
+        ))
+    }
+}
 
 impl Sprite for TextureAtlasSprite {}
 

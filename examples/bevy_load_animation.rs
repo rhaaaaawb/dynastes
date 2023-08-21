@@ -19,16 +19,16 @@ fn setup_animations(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut sprites: ResMut<Assets<TextureAtlas>>,
-    // mut state_machines: ResMut<Assets<BevyASM>>,
+    mut state_machines: ResMut<Assets<BevyASM>>,
 ) {
     commands.spawn(Camera2dBundle::default());
 
     let asm_str = fs::read_to_string("assets/state-machine.ron").unwrap();
     let asm: BevyASM = ron::from_str(&asm_str).unwrap();
 
-    let texture_atlas_handle = sprites.add(asm.frame_source().make_texture_atlas(asset_server));
+    let texture_atlas_handle = sprites.add(asm.0.frame_source().make_texture_atlas(asset_server));
 
-    // state_machines.add(asm);
+    state_machines.add(asm);
 
     commands.spawn((
         SpriteSheetBundle {
@@ -36,7 +36,7 @@ fn setup_animations(
             texture_atlas: texture_atlas_handle,
             ..Default::default()
         },
-        asm,
+        // asm,
         // TODO per bundle state information so ASMs can be reused?
     ));
 }

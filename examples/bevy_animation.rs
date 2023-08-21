@@ -48,8 +48,10 @@ fn setup_animations(
         IndexState::new(26, 51, 1000. / 15., Some(walk_id.clone()), false);
 
     let mut asm = BevyASM::new(frame_soure, idle_id, idle_state);
-    asm.add_states(vec![(walk_id, walk_state)]);
+    asm.0.add_states(vec![(walk_id, walk_state)]);
 
+    // I've left this here so it's easy to reset the serialized file
+    // for whenever I happend to change the format
     let asm_str = ron::to_string(&asm).unwrap();
     let _ = fs::write("assets/state-machine.ron", asm_str);
 

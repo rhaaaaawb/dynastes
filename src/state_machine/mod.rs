@@ -1,8 +1,6 @@
 use core::marker::PhantomData;
 use std::{collections::HashMap, fmt::Debug};
 
-#[cfg(feature = "bevy")]
-use bevy::{prelude::Component, reflect::TypePath};
 use log::error;
 use serde::{Deserialize, Serialize};
 
@@ -15,8 +13,6 @@ pub use state_id::StateID;
 pub use traits::*;
 
 #[derive(Debug, Serialize, Deserialize)]
-#[cfg_attr(feature = "bevy", derive(Component, TypePath))]
-// #[uuid = "74377e21-153d-4e30-9b5e-1b857a9ab807"]
 /// A finite state machine across animation states
 pub struct AnimationStateMachine<Sprite, State, FrameSource> {
     frame_source: FrameSource,

@@ -1,25 +1,51 @@
-use core::marker::PhantomData;
+use bevy::{
+    prelude::{AddAsset, App, Assets, Handle, Plugin, Query, Res, Update},
+    sprite::TextureAtlasSprite,
+    time::Time,
+};
 
-use bevy::prelude::*;
-
-use crate::state_machine::AnimationStateMachine;
+use crate::{
+    bevy::{
+        loader::{AsmLoader, FrameSourceLoader},
+        BevyASM, BevyFrameSource, MaybeBevyStateInstance,
+    },
+    state_machine::UpdateArgs,
+};
 
 /// The Dynastes sprite animation plugin for Bevy.
 ///
-/// Updates animation frames for bundles with an `AnimationStateMachine<S>` and `S` component.
-pub struct SpriteAnimationPlugin<Sprite>(PhantomData<Sprite>);
+/// Updates animation frames for bundles with an `AnimationStateMachine<TexutreAtlasSprite, Handle<TextureAtlas>>`.
+pub struct SpriteAnimationPlugin;
 
-impl<S> Default for SpriteAnimationPlugin<S> {
-    fn default() -> Self {
-        Self(PhantomData::default())
+impl Plugin for SpriteAnimationPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_asset::<BevyASM>();
+        app.init_asset_loader::<AsmLoader>();
+        app.add_asset::<BevyFrameSource>();
+        app.init_asset_loader::<FrameSourceLoader>();
+        app.add_systems(Update, animation_system);
     }
 }
 
-impl<S> Plugin for SpriteAnimationPlugin<S>
-where
-    S: Send + Sync + crate::state_machine::Sprite + Component,
-{
-    fn build(&self, app: &mut App) {
-        app.add_systems(Update, AnimationStateMachine::<S>::animation_system);
+/// Run the animations across bundles of `BevyASM` and `BevyStateInstance`
+pub fn animation_system(
+    time: Res<Time>,
+    asms: Res<Assets<BevyASM>>,
+    mut query: Query<(
+        &Handle<BevyASM>,
+        &mut TextureAtlasSprite,
+        &mut MaybeBevyStateInstance,
+    )>,
+) {
+    for (asm_handle, mut sprite, mut maybe_instance) in query.iter_mut() {
+        let asm = asms.get(&asm_handle).unwrap();
+        let instance = maybe_instance.0.get_or_insert(asm.default_instance());
+        asm.0.update(
+            &mut instance.0,
+            UpdateArgs {
+                delta_ms: time.delta_seconds_f64() * 1000.,
+            },
+            &mut sprite,
+        )
     }
 }

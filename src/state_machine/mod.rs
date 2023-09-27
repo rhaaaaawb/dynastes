@@ -29,13 +29,23 @@ where
     T: AnimationState<Sprite = S>,
 {
     /// Creates a new FSM initialized with `default_id` and `default_state`
-    pub fn new(frame_source: F, default_id: StateID, default_state: T) -> Self {
+    pub fn with_default(frame_source: F, default_id: StateID, default_state: T) -> Self {
         let mut states = HashMap::new();
         states.insert(default_id.clone(), default_state);
         Self {
             frame_source,
             default_id,
             states: states.into(),
+            phantom: PhantomData::default(),
+        }
+    }
+
+    /// Creates a new FSM initialized with `default_id` and `default_state`
+    pub fn with_states(frame_source: F, default_id: StateID, states: StateContainer<T>) -> Self {
+        Self {
+            frame_source,
+            default_id,
+            states,
             phantom: PhantomData::default(),
         }
     }
@@ -80,6 +90,16 @@ where
             .0
             .get(&instance_id)
             .map(|state| StateInstance::new(instance_id, state.start()))
+    }
+
+    /// The ASMs default state ID
+    pub fn default_id(&self) -> &StateID {
+        &self.default_id
+    }
+
+    /// The ASMs possible states
+    pub fn states(&self) -> &StateContainer<T> {
+        &self.states
     }
 }
 

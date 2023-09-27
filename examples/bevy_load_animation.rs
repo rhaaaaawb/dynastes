@@ -1,7 +1,5 @@
-use std::fs;
-
 use bevy::prelude::*;
-use dynastes::bevy::{BevyASM, BevyStateInstance, SpriteAnimationPlugin};
+use dynastes::bevy::{BevyASM, MaybeBevyStateInstance, SpriteAnimationPlugin};
 
 fn main() {
     env_logger::init();
@@ -15,31 +13,19 @@ fn main() {
         .run()
 }
 
-fn setup_animations(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut sprites: ResMut<Assets<TextureAtlas>>,
-    mut state_machines: ResMut<Assets<BevyASM>>,
-) {
+fn setup_animations(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(Camera2dBundle::default());
+    let asm: Handle<BevyASM> = asset_server.load("state-machine.asm");
 
-    // TODO: the next step is to somehow do this with AssetServer::load (?)
-    let asm_str = fs::read_to_string("assets/state-machine.ron").unwrap();
-    let asm: BevyASM = ron::from_str(&asm_str).unwrap();
-
-    let texture_atlas_handle = sprites.add(asm.0.frame_source().make_texture_atlas(asset_server));
-    let asm_handle = state_machines.add(asm);
-
-    let instance_str = fs::read_to_string("assets/default_instance.ron").unwrap();
-    let instance: BevyStateInstance = ron::from_str(&instance_str).unwrap();
+    let texture_atlas = asset_server.load("sprite-sheet.fs");
 
     commands.spawn((
         SpriteSheetBundle {
             sprite: TextureAtlasSprite::new(0),
-            texture_atlas: texture_atlas_handle,
+            texture_atlas,
             ..Default::default()
         },
-        asm_handle,
-        instance,
+        asm,
+        MaybeBevyStateInstance::default(),
     ));
 }

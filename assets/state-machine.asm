@@ -1,0 +1,1 @@
+BevyASMSerde(frame_source:"sprite-sheet.fs",default_id:("idle"),states:[(("idle"),(min_i:26,max_i:51,mspf:66.66666666666667,next_state:Some(("walk")))),(("walk"),(min_i:0,max_i:9,mspf:66.66666666666667,next_state:Some(("idle"))))])

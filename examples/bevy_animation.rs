@@ -1,8 +1,9 @@
-use std::fs;
-
 use bevy::prelude::*;
 use dynastes::{
-    bevy::{BevyASM, BevyFrameSource, SpriteAnimationPlugin, TextureAtlasGridMetadata},
+    bevy::{
+        BevyASM, BevyFrameSource, MaybeBevyStateInstance, SpriteAnimationPlugin,
+        TextureAtlasGridMetadata,
+    },
     state_machine::StateID,
     states::index::IndexState,
 };
@@ -27,7 +28,7 @@ fn setup_animations(
 ) {
     commands.spawn(Camera2dBundle::default());
 
-    let frame_soure = BevyFrameSource {
+    let fs = BevyFrameSource {
         path: "sprite-sheet.png".into(),
         metadata: TextureAtlasGridMetadata {
             tile_size: [128., 128.].into(),
@@ -38,7 +39,16 @@ fn setup_animations(
         },
     };
 
-    let texture_atlas_handle = sprites.add(frame_soure.make_texture_atlas(asset_server));
+    let texture_handle = asset_server.load(fs.path.clone());
+    let texture_atlas = TextureAtlas::from_grid(
+        texture_handle,
+        fs.metadata.tile_size,
+        fs.metadata.columns,
+        fs.metadata.rows,
+        fs.metadata.padding,
+        fs.metadata.offset,
+    );
+    let texture_atlas_handle = sprites.add(texture_atlas);
 
     let walk_id: StateID = "walk".to_string().into();
     let idle_id: StateID = "idle".to_string().into();
@@ -48,17 +58,14 @@ fn setup_animations(
     let idle_state: IndexState<TextureAtlasSprite> =
         IndexState::new(26, 51, 1000. / 15., Some(walk_id.clone()));
 
-    let mut asm = BevyASM::new(frame_soure, idle_id, idle_state);
+    let mut asm = BevyASM::new(texture_atlas_handle.clone(), idle_id, idle_state);
     asm.0.add_states(vec![(walk_id, walk_state)]);
 
-    // I've left this here so it's easy to reset the serialized file
-    // for whenever I happend to change the format
-    let asm_str = ron::to_string(&asm).unwrap();
-    let _ = fs::write("assets/state-machine.ron", asm_str);
+    // let asm_str = ron::to_string(&asm.serialize_with_server(asset_server).unwrap()).unwrap();
+    // let _ = fs::write("assets/state-machine.asm", asm_str);
 
-    let instance = asm.0.default_instance();
-    let instance_str = ron::to_string(&instance).unwrap();
-    let _ = fs::write("assets/default_instance.ron", instance_str);
+    // let fs_str = ron::to_string(&fs).unwrap();
+    // let _ = fs::write("assets/sprite-sheet.fs", fs_str);
 
     let asm_handle = state_machines.add(asm);
 
@@ -69,6 +76,6 @@ fn setup_animations(
             ..Default::default()
         },
         asm_handle,
-        instance,
+        MaybeBevyStateInstance::default(),
     ));
 }

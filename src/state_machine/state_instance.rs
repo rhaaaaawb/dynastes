@@ -10,7 +10,7 @@ use super::{AnimationState, StateID};
 #[cfg_attr(feature = "bevy", derive(Component))]
 /// The per-instance information necessary for running the ASM
 pub struct StateInstance<S, D> {
-    /// The current state for this instance
+    /// This instance's ID
     pub current_id: StateID,
     /// The state's data for this instance
     pub data: D,

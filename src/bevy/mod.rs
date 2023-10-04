@@ -75,6 +75,13 @@ impl BevyASM {
         BevyStateInstance(self.0.default_instance())
     }
 
+    /// Creates a new instance from the given state id if it exists
+    pub fn new_instance(&self, instance_id: StateID) -> Option<BevyStateInstance> {
+        self.0
+            .new_instance(instance_id)
+            .map(|i| BevyStateInstance(i))
+    }
+
     /// Converts the Bevy-safe struct into a serializable struct with the help of the given AssetServer
     pub fn serialize_with_server(&self, server: Res<AssetServer>) -> Option<BevyASMSerde> {
         Some(BevyASMSerde {

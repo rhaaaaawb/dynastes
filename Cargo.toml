@@ -28,7 +28,6 @@ edition = "2021"
 name = "bevy_animation"
 required-features = ['bevy']
 
-
 [[example]]
 name = "bevy_load_animation"
 required-features = ['bevy']

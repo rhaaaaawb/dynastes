@@ -1,8 +1,7 @@
 use core::marker::PhantomData;
 
-use bevy::prelude::Component;
 #[cfg(feature = "bevy")]
-use bevy::reflect::TypePath;
+use bevy::{prelude::Component, reflect::TypePath};
 use serde::{Deserialize, Serialize};
 
 use crate::state_machine::{AnimationState, IndexSprite, Sprite, StateID};
@@ -85,7 +84,8 @@ where
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Component)]
+#[derive(Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "bevy", derive(Component))]
 /// The per-instance data of an `IndexState`
 pub struct IndexData<Sprite> {
     /// The current index of the state

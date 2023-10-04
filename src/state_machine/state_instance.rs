@@ -6,7 +6,8 @@ use serde::{Deserialize, Serialize};
 
 use super::{AnimationState, StateID};
 
-#[derive(Debug, Serialize, Deserialize, Component)]
+#[derive(Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "bevy", derive(Component))]
 /// The per-instance information necessary for running the ASM
 pub struct StateInstance<S, D> {
     /// The current state for this instance

@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 use dynastes::{
     bevy::{
-        BevyASM, BevyFrameSource, MaybeBevyStateInstance, SpriteAnimationPlugin,
-        TextureAtlasGridMetadata,
+        BevyASM, BevyFrameSource, DynastesAnimationBundle, MaybeBevyStateInstance,
+        SpriteAnimationPlugin, TextureAtlasGridMetadata,
     },
     state_machine::StateID,
     states::index::IndexState,
@@ -69,13 +69,13 @@ fn setup_animations(
 
     let asm_handle = state_machines.add(asm);
 
-    commands.spawn((
-        SpriteSheetBundle {
+    commands.spawn(DynastesAnimationBundle {
+        state_machine: asm_handle,
+        animation_state: MaybeBevyStateInstance::default(),
+        sprite_sheet: SpriteSheetBundle {
             sprite: TextureAtlasSprite::new(0),
             texture_atlas: texture_atlas_handle,
             ..Default::default()
         },
-        asm_handle,
-        MaybeBevyStateInstance::default(),
-    ));
+    });
 }

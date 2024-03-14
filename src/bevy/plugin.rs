@@ -15,6 +15,7 @@ use crate::{
 /// The Dynastes sprite animation plugin for Bevy.
 ///
 /// Updates animation frames for bundles with an `AnimationStateMachine<TexutreAtlasSprite, Handle<TextureAtlas>>`.
+#[derive(Default)]
 pub struct SpriteAnimationPlugin;
 
 impl Plugin for SpriteAnimationPlugin {

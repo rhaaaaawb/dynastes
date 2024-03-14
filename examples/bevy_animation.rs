@@ -1,12 +1,14 @@
 use bevy::prelude::*;
 use dynastes::{
     bevy::{
-        BevyASM, BevyFrameSource, MaybeBevyStateInstance, SpriteAnimationPlugin,
-        TextureAtlasGridMetadata,
+        BevyASM, BevyFrameSource, DynastesAnimationBundle, MaybeBevyStateInstance,
+        SpriteAnimationPlugin, TextureAtlasGridMetadata,
     },
     state_machine::StateID,
     states::index::IndexState,
 };
+
+const COMMON_MSPF: f64 = 1000. / 8.;
 
 fn main() {
     env_logger::init();
@@ -50,13 +52,36 @@ fn setup_animations(
     );
     let texture_atlas_handle = sprites.add(texture_atlas);
 
+    walk_animation_with_fluidity(
+        &mut commands,
+        &mut state_machines,
+        texture_atlas_handle.clone(),
+        (-60., 0., 0.).into(),
+        None,
+    );
+    walk_animation_with_fluidity(
+        &mut commands,
+        &mut state_machines,
+        texture_atlas_handle.clone(),
+        (60., 0., 0.).into(),
+        Some(1. / 2.),
+    );
+}
+
+fn walk_animation_with_fluidity(
+    commands: &mut Commands,
+    state_machines: &mut ResMut<Assets<BevyASM>>,
+    texture_atlas_handle: Handle<TextureAtlas>,
+    position: Vec3,
+    fluidity: Option<f64>,
+) {
     let walk_id: StateID = "walk".to_string().into();
     let idle_id: StateID = "idle".to_string().into();
 
     let walk_state: IndexState<TextureAtlasSprite> =
-        IndexState::new(0, 9, 1000. / 15., Some(idle_id.clone()));
+        IndexState::new(0, 9, COMMON_MSPF, Some(idle_id.clone()), None, fluidity);
     let idle_state: IndexState<TextureAtlasSprite> =
-        IndexState::new(26, 51, 1000. / 15., Some(walk_id.clone()));
+        IndexState::new(26, 51, COMMON_MSPF, Some(walk_id.clone()), None, fluidity);
 
     let mut asm = BevyASM::new(texture_atlas_handle.clone(), idle_id, idle_state);
     asm.0.add_states(vec![(walk_id, walk_state)]);
@@ -68,14 +93,16 @@ fn setup_animations(
     // let _ = fs::write("assets/sprite-sheet.fs", fs_str);
 
     let asm_handle = state_machines.add(asm);
+    let scale = 4.;
 
-    commands.spawn((
-        SpriteSheetBundle {
+    commands.spawn(DynastesAnimationBundle {
+        state_machine: asm_handle,
+        animation_state: MaybeBevyStateInstance::default(),
+        sprite_sheet: SpriteSheetBundle {
             sprite: TextureAtlasSprite::new(0),
             texture_atlas: texture_atlas_handle,
+            transform: Transform::from_translation(position).with_scale(Vec3::splat(scale)),
             ..Default::default()
         },
-        asm_handle,
-        MaybeBevyStateInstance::default(),
-    ));
+    });
 }

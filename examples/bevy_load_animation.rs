@@ -1,5 +1,7 @@
 use bevy::prelude::*;
-use dynastes::bevy::{BevyASM, MaybeBevyStateInstance, SpriteAnimationPlugin};
+use dynastes::bevy::{
+    BevyASM, DynastesAnimationBundle, MaybeBevyStateInstance, SpriteAnimationPlugin,
+};
 
 fn main() {
     env_logger::init();
@@ -19,13 +21,13 @@ fn setup_animations(mut commands: Commands, asset_server: Res<AssetServer>) {
 
     let texture_atlas = asset_server.load("sprite-sheet.fs");
 
-    commands.spawn((
-        SpriteSheetBundle {
+    commands.spawn(DynastesAnimationBundle {
+        state_machine: asm,
+        animation_state: MaybeBevyStateInstance::default(),
+        sprite_sheet: SpriteSheetBundle {
             sprite: TextureAtlasSprite::new(0),
             texture_atlas,
             ..Default::default()
         },
-        asm,
-        MaybeBevyStateInstance::default(),
-    ));
+    });
 }

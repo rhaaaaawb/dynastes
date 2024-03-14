@@ -2,9 +2,9 @@ use std::path::PathBuf;
 
 use bevy::{
     asset::LoadContext,
-    prelude::{AssetServer, Component, Handle, Image, Res, Vec2},
+    prelude::{AssetServer, Bundle, Component, Handle, Image, Res, Vec2},
     reflect::{TypePath, TypeUuid},
-    sprite::{TextureAtlas, TextureAtlasSprite},
+    sprite::{SpriteSheetBundle, TextureAtlas, TextureAtlasSprite},
 };
 use serde::{Deserialize, Serialize};
 
@@ -22,6 +22,17 @@ mod plugin;
 pub use plugin::SpriteAnimationPlugin;
 
 use self::bevy_serde::BevyASMSerde;
+
+#[derive(Bundle)]
+/// A Bundle of the components needed to run an animation with Bevy ECS
+pub struct DynastesAnimationBundle {
+    /// The animation state machine
+    pub state_machine: Handle<BevyASM>,
+    /// The current state in `state_machine`
+    pub animation_state: MaybeBevyStateInstance,
+    /// The sprite sheet that the animation is across
+    pub sprite_sheet: SpriteSheetBundle,
+}
 
 /// A convenience wrapper for the bevy monomorphization of the ASM
 #[derive(Debug, Component, TypeUuid, TypePath)]
@@ -62,6 +73,13 @@ impl BevyASM {
     /// Creates a new instance from the default state
     pub fn default_instance(&self) -> BevyStateInstance {
         BevyStateInstance(self.0.default_instance())
+    }
+
+    /// Creates a new instance from the given state id if it exists
+    pub fn new_instance(&self, instance_id: StateID) -> Option<BevyStateInstance> {
+        self.0
+            .new_instance(instance_id)
+            .map(|i| BevyStateInstance(i))
     }
 
     /// Converts the Bevy-safe struct into a serializable struct with the help of the given AssetServer

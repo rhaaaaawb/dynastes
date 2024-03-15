@@ -23,6 +23,7 @@ pub struct IndexState<Sprite> {
     /// The "phase shift" of the animation in ms
     phase: f64,
     frames_per_increment: f64,
+    fluidity: f64,
     #[serde(skip)]
     phantom: PhantomData<Sprite>,
 }
@@ -50,9 +51,7 @@ impl<S> IndexState<S> {
         }
 
         let actual_mspf = nominal_mspf / fluidity_factor;
-        println!("{actual_mspf}");
         let frames_per_increment = 1. / fluidity_factor;
-        println!("{frames_per_increment}");
 
         Self {
             min_i,
@@ -62,6 +61,7 @@ impl<S> IndexState<S> {
             next_state,
             phase: phase.unwrap_or_default(),
             frames_per_increment,
+            fluidity: fluidity_factor,
             phantom: PhantomData::default(),
         }
     }

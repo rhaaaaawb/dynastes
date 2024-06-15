@@ -1,1 +1,32 @@
-BevyASMSerde(frame_source:"sprite-sheet.fs",default_id:("idle"),states:[(("idle"),(min_i:26,max_i:51,mspf:66.66666666666667,next_state:Some(("walk")))),(("walk"),(min_i:0,max_i:9,mspf:66.66666666666667,next_state:Some(("idle"))))])
+BevyASMSerde(
+    frame_source:"sprite-sheet.fs",
+    default_id:("idle"),
+    states:[
+        (
+            ("walk"),
+            (
+                min_i:0,
+                max_i:9,
+                nominal_mspf:66.66666666667,
+                actual_mspf:66.66666666667,
+                next_state:Some(("idle")),
+                phase:0.0,
+                frames_per_increment:1.0,
+                fluidity:1.0,
+            )
+        ),
+        (
+            ("idle"),
+            (
+                min_i:26,
+                max_i:51,
+                nominal_mspf:66.66666666667,
+                actual_mspf:66.66666666667,
+                next_state:Some(("walk")),
+                phase:0.0,
+                frames_per_increment:1.0,
+                fluidity:1.0
+            )
+        )
+    ]
+)

@@ -86,12 +86,6 @@ fn walk_animation_with_fluidity(
     let mut asm = BevyASM::new(texture_atlas_handle.clone(), idle_id, idle_state);
     asm.0.add_states(vec![(walk_id, walk_state)]);
 
-    // let asm_str = ron::to_string(&asm.serialize_with_server(asset_server).unwrap()).unwrap();
-    // let _ = fs::write("assets/state-machine.asm", asm_str);
-
-    // let fs_str = ron::to_string(&fs).unwrap();
-    // let _ = fs::write("assets/sprite-sheet.fs", fs_str);
-
     let asm_handle = state_machines.add(asm);
     let scale = 4.;
 

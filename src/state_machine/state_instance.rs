@@ -1,13 +1,11 @@
 use core::marker::PhantomData;
 
-#[cfg(feature = "bevy")]
 use bevy::prelude::Component;
 use serde::{Deserialize, Serialize};
 
 use super::{AnimationState, StateID};
 
-#[derive(Debug, Serialize, Deserialize)]
-#[cfg_attr(feature = "bevy", derive(Component))]
+#[derive(Debug, Serialize, Deserialize, Component)]
 /// The per-instance information necessary for running the ASM
 pub struct StateInstance<S, D> {
     /// This instance's ID

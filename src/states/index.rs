@@ -1,16 +1,15 @@
 use core::marker::PhantomData;
 
-#[cfg(feature = "bevy")]
-use bevy::{prelude::Component, reflect::TypePath};
+use bevy::{
+    prelude::Component, reflect::TypePath, render::texture::TextureCache, sprite::TextureAtlas,
+};
 use serde::{Deserialize, Serialize};
 
-use crate::state_machine::{AnimationState, IndexSprite, Sprite, StateID};
+use crate::state_machine::{AnimationState, StateID};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "bevy", derive(TypePath))]
-
+#[derive(Debug, Clone, Serialize, Deserialize, TypePath)]
 /// A state that determines the frame based on an incrementing index
-pub struct IndexState<Sprite> {
+pub struct IndexState {
     min_i: usize,
     max_i: usize,
     /// The average framerate of the animation (ignoring fluidity)
@@ -24,11 +23,9 @@ pub struct IndexState<Sprite> {
     phase: f64,
     frames_per_increment: f64,
     fluidity: f64,
-    #[serde(skip)]
-    phantom: PhantomData<Sprite>,
 }
 
-impl<S> IndexState<S> {
+impl IndexState {
     /// Make a new index state
     /// * `min_i` The minimum index in the sprite sheet that this state should use (inclusive).
     /// * `max_i` The maximum index in the sprite sheet that this state should use (inclusive).
@@ -62,11 +59,12 @@ impl<S> IndexState<S> {
             phase: phase.unwrap_or_default(),
             frames_per_increment,
             fluidity: fluidity_factor,
-            phantom: PhantomData::default(),
         }
     }
 
-    fn maybe_increment(&self, data: &mut IndexData<S>) {
+    fn maybe_increment(&self, data: &mut IndexData, sprite: &mut TextureAtlas) {
+        let current_index = sprite.index;
+
         let mut effective_time_elapsed = data.ms_elapsed;
 
         if data.phase_delay > 0. {
@@ -82,7 +80,7 @@ impl<S> IndexState<S> {
         // If we checked for reaching the end based on the actual frame it would lead to completly fluid
         // animations reaching the end some number of frames early.
         // Instead we check if the animation is at the end based on if it were running completely fluidly
-        let nominal_next_index = data.index + nominal_num_frames as usize;
+        let nominal_next_index = current_index + nominal_num_frames as usize;
         if nominal_next_index >= self.max_i {
             data.reached_end = true;
         }
@@ -91,8 +89,8 @@ impl<S> IndexState<S> {
             * self.frames_per_increment) as usize;
         data.ms_elapsed %= self.actual_mspf;
 
-        let next_index = data.index + num_frames;
-        data.index = if next_index > self.max_i {
+        let next_index = current_index + num_frames;
+        sprite.index = if next_index > self.max_i {
             next_index - self.max_i + self.min_i - 1
         } else {
             next_index
@@ -100,12 +98,9 @@ impl<S> IndexState<S> {
     }
 }
 
-impl<S> AnimationState for IndexState<S>
-where
-    S: Send + Sync + Sprite + IndexSprite,
-{
-    type Sprite = S;
-    type Data = IndexData<S>;
+impl AnimationState for IndexState {
+    type Sprite = TextureAtlas;
+    type Data = IndexData;
 
     fn start(&self) -> Self::Data {
         IndexData::new(&self)
@@ -115,16 +110,15 @@ where
         &self,
         data: &mut Self::Data,
         args: crate::state_machine::UpdateArgs,
-        sprite: &mut Self::Sprite,
+        sprite: &mut TextureAtlas,
     ) {
         data.ms_elapsed += args.delta_ms;
-        self.maybe_increment(data);
-        sprite.set_index(data.index);
+        self.maybe_increment(data, sprite);
     }
 
-    fn next_state(&self, data: &Self::Data) -> Option<StateID> {
+    fn next_state(&self, data: &Self::Data, sprite: &Self::Sprite) -> Option<StateID> {
         self.next_state.as_ref().and_then(|next| {
-            if data.index >= self.max_i || data.reached_end {
+            if sprite.index >= self.max_i || data.reached_end {
                 Some(next.clone())
             } else {
                 None
@@ -133,30 +127,23 @@ where
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[cfg_attr(feature = "bevy", derive(Component))]
+#[derive(Debug, Serialize, Deserialize, Component)]
 /// The per-instance data of an `IndexState`
-pub struct IndexData<Sprite> {
-    /// The current index of the state
-    pub index: usize,
+pub struct IndexData {
     /// The total number of milliseconds that have passed since the last frame update
     pub ms_elapsed: f64,
     /// The number of ms to "wait" before updating the state for the first time
     pub phase_delay: f64,
     reached_end: bool,
-    #[serde(skip)]
-    phantom: PhantomData<Sprite>,
 }
 
-impl<S> IndexData<S> {
+impl IndexData {
     /// Creates the data from a given state
-    pub fn new(state: &IndexState<S>) -> Self {
+    pub fn new(state: &IndexState) -> Self {
         Self {
-            index: state.min_i,
             ms_elapsed: 0.,
             phase_delay: state.phase,
             reached_end: false,
-            phantom: PhantomData::default(),
         }
     }
 }

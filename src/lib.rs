@@ -6,6 +6,4 @@ pub mod state_machine;
 /// The types of states that can be switched between
 pub mod states;
 
-#[cfg(feature = "bevy")]
-/// Plugin support for the Bevy engine
-pub mod bevy;
+pub use state_machine::plugin::*;
